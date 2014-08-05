@@ -20,6 +20,50 @@ public class TestDb extends AndroidTestCase {
 
     public static final String LOG_TAG = TestDb.class.getSimpleName();
 
+    public static final String TEST_POSTAL_CODE = "90210";
+    public static final String TEST_LOCATION_NAME = "Hollywood";
+    public static final String TEST_DATE = "20140505";
+
+    static ContentValues createWeatherValues(long locationRowId) {
+        ContentValues weatherValues = new ContentValues();
+        weatherValues.put(WeatherEntry.COLUMN_LOC_KEY, locationRowId);
+        weatherValues.put(WeatherEntry.COLUMN_DATETEXT, TEST_DATE);
+        weatherValues.put(WeatherEntry.COLUMN_DEGREES, 1.1);
+        weatherValues.put(WeatherEntry.COLUMN_HUMIDITY, 1.2);
+        weatherValues.put(WeatherEntry.COLUMN_PRESSURE, 1.3);
+        weatherValues.put(WeatherEntry.COLUMN_MAX_TEMP, 75);
+        weatherValues.put(WeatherEntry.COLUMN_MIN_TEMP, 65);
+        weatherValues.put(WeatherEntry.COLUMN_SHORT_DESC, "Asteroids");
+        weatherValues.put(WeatherEntry.COLUMN_WIND_SPEED, 5.5);
+        weatherValues.put(WeatherEntry.COLUMN_WEATHER_ID, 321);
+
+        return weatherValues;
+    }
+
+    static ContentValues createNorthPoleLocationValues() {
+// Create a new map of values, where column names are the keys
+        ContentValues testValues = new ContentValues();
+        testValues.put(LocationEntry.COLUMN_POSTAL_CODE, TEST_POSTAL_CODE);
+        testValues.put(LocationEntry.COLUMN_LOCATION_NAME, TEST_LOCATION_NAME);
+
+        return testValues;
+    }
+
+    static void validateCursor(Cursor valueCursor, ContentValues expectedValues) {
+
+        assertTrue(valueCursor.moveToFirst());
+
+        Set<Map.Entry<String, Object>> valueSet = expectedValues.valueSet();
+        for (Map.Entry<String, Object> entry : valueSet) {
+            String columnName = entry.getKey();
+            int idx = valueCursor.getColumnIndex(columnName);
+            assertFalse(idx == -1);
+            String expectedValue = entry.getValue().toString();
+            assertEquals(expectedValue, valueCursor.getString(idx));
+        }
+        valueCursor.close();
+    }
+
     public void testCreateDb() throws Throwable {
         mContext.deleteDatabase(WeatherDbHelper.DATABASE_NAME);
         SQLiteDatabase db = new WeatherDbHelper(
@@ -78,47 +122,8 @@ public class TestDb extends AndroidTestCase {
         );
 
         validateCursor(weatherCursor, weatherValues);
+
         dbHelper.close();
 
-    }
-
-    static ContentValues createWeatherValues(long locationRowId) {
-        ContentValues weatherValues = new ContentValues();
-        weatherValues.put(WeatherEntry.COLUMN_LOC_KEY, locationRowId);
-        weatherValues.put(WeatherEntry.COLUMN_DATETEXT, "20141205");
-        weatherValues.put(WeatherEntry.COLUMN_DEGREES, 1.1);
-        weatherValues.put(WeatherEntry.COLUMN_HUMIDITY, 1.2);
-        weatherValues.put(WeatherEntry.COLUMN_PRESSURE, 1.3);
-        weatherValues.put(WeatherEntry.COLUMN_MAX_TEMP, 75);
-        weatherValues.put(WeatherEntry.COLUMN_MIN_TEMP, 65);
-        weatherValues.put(WeatherEntry.COLUMN_SHORT_DESC, "Asteroids");
-        weatherValues.put(WeatherEntry.COLUMN_WIND_SPEED, 5.5);
-        weatherValues.put(WeatherEntry.COLUMN_WEATHER_ID, 321);
-
-        return weatherValues;
-    }
-
-    static ContentValues createNorthPoleLocationValues() {
-// Create a new map of values, where column names are the keys
-        ContentValues testValues = new ContentValues();
-        testValues.put(LocationEntry.COLUMN_POSTAL_CODE, "90210");
-        testValues.put(LocationEntry.COLUMN_LOCATION_NAME, "Hollywood");
-
-        return testValues;
-    }
-
-    static void validateCursor(Cursor valueCursor, ContentValues expectedValues) {
-
-        assertTrue(valueCursor.moveToFirst());
-
-        Set<Map.Entry<String, Object>> valueSet = expectedValues.valueSet();
-        for (Map.Entry<String, Object> entry : valueSet) {
-            String columnName = entry.getKey();
-            int idx = valueCursor.getColumnIndex(columnName);
-            assertFalse(idx == -1);
-            String expectedValue = entry.getValue().toString();
-            assertEquals(expectedValue, valueCursor.getString(idx));
-        }
-        valueCursor.close();
     }
 }

@@ -1,8 +1,10 @@
 package co.addoil.sunshine.test;
 
+import android.annotation.TargetApi;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.test.AndroidTestCase;
 import android.util.Log;
 
@@ -52,6 +54,8 @@ public class TestProvider extends AndroidTestCase {
 
         TestDb.validateCursor(cursor, testValues);
 
+        cursor.close();
+
         // Now see if we can successfully query if we include the row id
         cursor = mContext.getContentResolver().query(
                 LocationEntry.buildLocationUri(locationRowId),
@@ -62,6 +66,8 @@ public class TestProvider extends AndroidTestCase {
         );
 
         TestDb.validateCursor(cursor, testValues);
+
+        cursor.close();
 
         ContentValues weatherValues = TestDb.createWeatherValues(locationRowId);
 
@@ -78,6 +84,50 @@ public class TestProvider extends AndroidTestCase {
         );
 
         TestDb.validateCursor(weatherCursor, weatherValues);
+
+        weatherCursor.close();
+
+        // Add the location values in with the weather data so that we can make
+        // sure that the join worked and we actually get all the values back
+        addAllContentValues(weatherValues, testValues);
+
+        // Get the joined Weather and Location data
+        weatherCursor = mContext.getContentResolver().query(
+                WeatherEntry.buildWeatherLocation(TestDb.TEST_POSTAL_CODE),
+                null, // leaving "columns" null just returns all the columns.
+                null, // cols for "where" clause
+                null, // values for "where" clause
+                null // sort order
+        );
+        TestDb.validateCursor(weatherCursor, weatherValues);
+
+        weatherCursor.close();
+
+        // Get the joined Weather and Location data with a start date
+        weatherCursor = mContext.getContentResolver().query(
+                WeatherEntry.buildWeatherLocationWithStartDate(
+                        TestDb.TEST_POSTAL_CODE, TestDb.TEST_DATE),
+                null, // leaving "columns" null just returns all the columns.
+                null, // cols for "where" clause
+                null, // values for "where" clause
+                null // sort order
+        );
+        TestDb.validateCursor(weatherCursor, weatherValues);
+
+        weatherCursor.close();
+
+        // Get the joined Weather and Location data with a day
+        weatherCursor = mContext.getContentResolver().query(
+                WeatherEntry.buildWeatherLocationWithDate(
+                        TestDb.TEST_POSTAL_CODE, TestDb.TEST_DATE),
+                null, // leaving "columns" null just returns all the columns.
+                null, // cols for "where" clause
+                null, // values for "where" clause
+                null // sort order
+        );
+        TestDb.validateCursor(weatherCursor, weatherValues);
+
+        weatherCursor.close();
         dbHelper.close();
 
     }
@@ -111,5 +161,12 @@ public class TestProvider extends AndroidTestCase {
         type = mContext.getContentResolver().getType(LocationEntry.buildLocationUri(1L));
         // vnd.android.cursor.item/com.example.android.sunshine.app/location
         assertEquals(LocationEntry.CONTENT_ITEM_TYPE, type);
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    void addAllContentValues(ContentValues destination, ContentValues source) {
+        for (String key : source.keySet()) {
+            destination.put(key, source.getAsString(key));
+        }
     }
 }
