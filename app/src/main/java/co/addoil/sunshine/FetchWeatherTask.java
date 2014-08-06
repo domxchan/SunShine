@@ -64,7 +64,7 @@ class FetchWeatherTask extends AsyncTask<String, Void, Void> {
                     .build();
 
             String jsonString = fetcher.getUrlString(uri.toString());
-            String[] results = getWeatherDataFromJson(jsonString, 7, locationQuery);
+            String[] results = getWeatherDataFromJson(jsonString, numDays, locationQuery);
         } catch (IOException ioe) {
             Log.e(LOG_TAG, "Failed! IOException.");
             ioe.printStackTrace();
@@ -120,7 +120,7 @@ class FetchWeatherTask extends AsyncTask<String, Void, Void> {
         final String OWM_CITY_NAME = "name";
         final String OWM_COORD = "coord";
         final String OWM_COORD_LAT = "lat";
-        final String OWM_COORD_LONG = "long";
+        final String OWM_COORD_LONG = "lon";
 
         // These are the names of the JSON objects that need to be extracted.
         final String OWM_LIST = "list";
