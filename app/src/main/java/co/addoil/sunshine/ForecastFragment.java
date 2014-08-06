@@ -178,8 +178,12 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
                             cursor.getString(COL_WEATHER_DESC),
                             Utility.formatTemperature(cursor.getInt(COL_WEATHER_MAX_TEMP), isMetric),
                             Utility.formatTemperature(cursor.getInt(COL_WEATHER_MIN_TEMP), isMetric));
+/*
                     Intent i = new Intent(getActivity(), DetailActivity.class)
                             .putExtra(Intent.EXTRA_TEXT, forecast);
+*/
+                    Intent i = new Intent(getActivity(), DetailActivity.class)
+                            .putExtra(DetailFragment.DATE_KEY, cursor.getString(COL_WEATHER_DATE));
                     startActivity(i);
                 }
             }
