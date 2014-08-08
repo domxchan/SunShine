@@ -18,6 +18,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import co.addoil.sunshine.data.WeatherContract;
@@ -34,7 +35,12 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             WeatherContract.WeatherEntry.COLUMN_DATETEXT,
             WeatherContract.WeatherEntry.COLUMN_SHORT_DESC,
             WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
-            WeatherContract.WeatherEntry.COLUMN_MIN_TEMP
+            WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,
+            WeatherContract.WeatherEntry.COLUMN_HUMIDITY,
+            WeatherContract.WeatherEntry.COLUMN_WIND_SPEED,
+            WeatherContract.WeatherEntry.COLUMN_DEGREES,
+            WeatherContract.WeatherEntry.COLUMN_PRESSURE,
+            WeatherContract.WeatherEntry.COLUMN_WEATHER_ID
     };
     private static final int DETAIL_LOADER = 0;
     private static final String TAG = DetailFragment.class.getSimpleName();
@@ -43,6 +49,15 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private ShareActionProvider mShareActionProvider;
     private String mForecastStr;
     private String mLocation;
+    private ImageView mIconView;
+    private TextView mDateView;
+    private TextView mFriendlyDateView;
+    private TextView mDescriptionView;
+    private TextView mHighTempView;
+    private TextView mLowTempView;
+    private TextView mHumidityView;
+    private TextView mWindView;
+    private TextView mPressureView;
 
     public DetailFragment() {
         setHasOptionsMenu(true);
@@ -60,8 +75,17 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
+                             Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
+        mIconView = (ImageView) rootView.findViewById(R.id.detail_icon);
+        mDateView = (TextView) rootView.findViewById(R.id.detail_date_textView);
+        mFriendlyDateView = (TextView) rootView.findViewById(R.id.detail_day_textView);
+        mDescriptionView = (TextView) rootView.findViewById(R.id.detail_forecast_textView);
+        mHighTempView = (TextView) rootView.findViewById(R.id.detail_high_textView);
+        mLowTempView = (TextView) rootView.findViewById(R.id.detail_low_textView);
+        mHumidityView = (TextView) rootView.findViewById(R.id.detail_humidity_textView);
+        mWindView = (TextView) rootView.findViewById(R.id.detail_wind_textView);
+        mPressureView = (TextView) rootView.findViewById(R.id.detail_pressure_textView);
         return rootView;
     }
 
@@ -150,30 +174,46 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             return;
         }
 
-        String dateString = Utility.formatDate(
-                data.getString(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_DATETEXT)));
+        int weatherId = data.getInt(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID));
+
+        mIconView.setImageResource(Utility.getArtResourceForWeatherCondition(weatherId));
+
+        String date = data.getString(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_DATETEXT));
+        String friendlyDateText = Utility.getDayName(getActivity(), date);
+        String dateText = Utility.getFormattedMonthDay(getActivity(), date);
+        mFriendlyDateView.setText(friendlyDateText);
+        mDateView.setText(dateText);
+
         String weatherDescription =
                 data.getString(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_SHORT_DESC));
+        mDescriptionView.setText(weatherDescription);
 
         boolean isMetric = Utility.isMetric(getActivity());
-        String high = Utility.formatTemperature(
-                data.getDouble(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP)), isMetric);
-        String low = Utility.formatTemperature(
-                data.getDouble(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_MIN_TEMP)), isMetric);
+        double high = data.getDouble(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP));
+        String highStr = Utility.formatTemperature(getActivity(), high, isMetric);
+        mHighTempView.setText(highStr);
 
-        mForecastStr = String.format("%s - %s - %s/%s",
-                dateString, weatherDescription, high, low);
+        double low = data.getDouble(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_MIN_TEMP));
+        String lowStr = Utility.formatTemperature(getActivity(), low, isMetric);
+        mLowTempView.setText(lowStr);
 
-        Log.v(TAG, "Forecast String: " + mForecastStr);
+        float humidity = data.getFloat(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_HUMIDITY));
+        mHumidityView.setText(getActivity().getString(R.string.format_humidity, humidity));
 
-        ((TextView) getView().findViewById(R.id.detail_date_textView)).setText(dateString);
-        ((TextView) getView().findViewById(R.id.detail_forecast_textView)).setText(weatherDescription);
-        ((TextView) getView().findViewById(R.id.detail_high_textView)).setText(high);
-        ((TextView) getView().findViewById(R.id.detail_low_textView)).setText(low);
+        float windSpeed = data.getFloat(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_WIND_SPEED));
+        float windDir = data.getFloat(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_DEGREES));
+        mWindView.setText(Utility.getFormattedWind(getActivity(), windSpeed, windDir));
+
+        float pressure = data.getFloat(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_PRESSURE));
+        mPressureView.setText(getActivity().getString(R.string.format_pressure, pressure));
+
+        mForecastStr = String.format("%s - %s - %s/%s", dateText, weatherDescription, highStr, lowStr);
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> cursorLoader) {
         getLoaderManager().restartLoader(DETAIL_LOADER, null, this);
     }
+
+
 }

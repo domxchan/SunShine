@@ -207,8 +207,10 @@ class FetchWeatherTask extends AsyncTask<String, Void, Void> {
                 weatherValues.put(WeatherContract.WeatherEntry.COLUMN_PRESSURE, pressure);
                 weatherValues.put(WeatherContract.WeatherEntry.COLUMN_WIND_SPEED, windSpeed);
                 weatherValues.put(WeatherContract.WeatherEntry.COLUMN_DEGREES, windDirection);
+                weatherValues.put(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID, weatherId);
 
                 cVVector.add(weatherValues);
+
 
                 highAndLow = formatHighLows(high, low);
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
@@ -217,6 +219,7 @@ class FetchWeatherTask extends AsyncTask<String, Void, Void> {
             if (cVVector.size() > 0) {
                 ContentValues[] cvArray = new ContentValues[cVVector.size()];
                 cVVector.toArray(cvArray);
+
                 int rowsInserted = mContext.getContentResolver()
                         .bulkInsert(WeatherContract.WeatherEntry.CONTENT_URI, cvArray);
                 Log.v(LOG_TAG, "inserted " + rowsInserted + " rows of weather data");

@@ -270,6 +270,7 @@ public class WeatherProvider extends ContentProvider {
                 int returnCount = 0;
                 try {
                     for (ContentValues value : values) {
+
                         long _id = db.insert(WeatherContract.WeatherEntry.TABLE_NAME, null, value);
                         if (_id != -1) {
                             returnCount++;
