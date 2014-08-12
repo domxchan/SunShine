@@ -45,7 +45,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private static final int DETAIL_LOADER = 0;
     private static final String TAG = DetailFragment.class.getSimpleName();
     private static final String FORECAST_SHARE_HASHTAG = " #SunshineApp";
-    TextView mTextView;
     private ShareActionProvider mShareActionProvider;
     private String mForecastStr;
     private String mLocation;
@@ -58,6 +57,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private TextView mHumidityView;
     private TextView mWindView;
     private TextView mPressureView;
+    private String mDateStr;
+
 
     public DetailFragment() {
         setHasOptionsMenu(true);
@@ -65,17 +66,22 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-//        if (null != savedInstanceState)
-        getLoaderManager().initLoader(DETAIL_LOADER, null, this);
+        super.onActivityCreated(savedInstanceState);
         if (savedInstanceState != null) {
             mLocation = savedInstanceState.getString(LOCATION_KEY);
         }
-        super.onActivityCreated(savedInstanceState);
+        if (mDateStr != null)
+            getLoaderManager().initLoader(DETAIL_LOADER, null, this);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+        Bundle args = getArguments();
+        if (args != null) {
+            mDateStr = args.getString(DetailFragment.DATE_KEY);
+        }
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
         mIconView = (ImageView) rootView.findViewById(R.id.detail_icon);
         mDateView = (TextView) rootView.findViewById(R.id.detail_date_textView);
@@ -146,15 +152,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
         Log.v(TAG, "In onCreateLoader");
-        Intent intent = getActivity().getIntent();
-        if (intent == null || !intent.hasExtra(DATE_KEY))
-            return null;
-
-        String forecastDate = intent.getStringExtra(DATE_KEY);
+//        String forecastDate = intent.getStringExtra(DATE_KEY);
         String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATETEXT + " ASC";
 
         mLocation = Utility.getPreferredLocation(getActivity());
-        Uri weatherForLocationUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(mLocation, forecastDate);
+        Uri weatherForLocationUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(mLocation, mDateStr);
 
         return new CursorLoader(
                 getActivity(),
@@ -214,6 +216,4 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public void onLoaderReset(Loader<Cursor> cursorLoader) {
         getLoaderManager().restartLoader(DETAIL_LOADER, null, this);
     }
-
-
 }
