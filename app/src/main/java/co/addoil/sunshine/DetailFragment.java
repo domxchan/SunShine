@@ -78,6 +78,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
+        Log.d(TAG, "onCreateView is run");
+
         Bundle args = getArguments();
         if (args != null) {
             mDateStr = args.getString(DetailFragment.DATE_KEY);
@@ -97,7 +99,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.detail, menu);
+        inflater.inflate(R.menu.detailfragment, menu);
 
         MenuItem menuItem = menu.findItem(R.id.action_share);
         mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
@@ -189,6 +191,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         String weatherDescription =
                 data.getString(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_SHORT_DESC));
         mDescriptionView.setText(weatherDescription);
+        mIconView.setContentDescription(weatherDescription);
 
         boolean isMetric = Utility.isMetric(getActivity());
         double high = data.getDouble(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP));

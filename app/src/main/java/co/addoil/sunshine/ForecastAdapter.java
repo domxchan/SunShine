@@ -78,12 +78,13 @@ public class ForecastAdapter extends CursorAdapter {
         // Read date from cursor
         String dateString = cursor.getString(ForecastFragment.COL_WEATHER_DATE);
         // Find TextView and set formatted date on it
-        viewHolder.getDateView().setText(Utility.getFriendlyDayString(context, dateString));
+        viewHolder.getsDateView().setText(Utility.getFriendlyDayString(context, dateString));
 
         // Read weather forecast from cursor
         String description = cursor.getString(ForecastFragment.COL_WEATHER_DESC);
         // Find TextView and set weather forecast on it
         viewHolder.getDescriptionView().setText(description);
+        viewHolder.getIconView().setContentDescription(description);
 
         // Read user preference for metric or imperial temperature units
         boolean isMetric = Utility.isMetric(context);
@@ -97,38 +98,38 @@ public class ForecastAdapter extends CursorAdapter {
 
     public static class ViewHolder {
 
-        private final ImageView mIconView;
-        private final TextView mDateView;
-        private final TextView mDescriptionView;
-        private final TextView mHighTempView;
-        private final TextView mLowTempView;
+        private final ImageView sIconView;
+        private final TextView sDateView;
+        private final TextView sDescriptionView;
+        private final TextView sHighTempView;
+        private final TextView sLowTempView;
 
         public ViewHolder(View view) {
-            mIconView = (ImageView) view.findViewById(R.id.list_item_icon);
-            mDateView = (TextView) view.findViewById(R.id.list_item_date_textview);
-            mDescriptionView = (TextView) view.findViewById(R.id.list_item_forecast_textview);
-            mHighTempView = (TextView) view.findViewById(R.id.list_item_high_textview);
-            mLowTempView = (TextView) view.findViewById(R.id.list_item_low_textview);
+            sIconView = (ImageView) view.findViewById(R.id.list_item_icon);
+            sDateView = (TextView) view.findViewById(R.id.list_item_date_textview);
+            sDescriptionView = (TextView) view.findViewById(R.id.list_item_forecast_textview);
+            sHighTempView = (TextView) view.findViewById(R.id.list_item_high_textview);
+            sLowTempView = (TextView) view.findViewById(R.id.list_item_low_textview);
         }
 
         public ImageView getIconView() {
-            return mIconView;
+            return sIconView;
         }
 
-        public TextView getDateView() {
-            return mDateView;
+        public TextView getsDateView() {
+            return sDateView;
         }
 
         public TextView getDescriptionView() {
-            return mDescriptionView;
+            return sDescriptionView;
         }
 
         public TextView getHighTempView() {
-            return mHighTempView;
+            return sHighTempView;
         }
 
         public TextView getLowTempView() {
-            return mLowTempView;
+            return sLowTempView;
         }
     }
 }
