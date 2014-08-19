@@ -51,4 +51,6 @@
         <item>Imperial</item>
     </string-array>
 
+    <string name="sync_account_type">sunshine.addoil.co</string>
+    <string name="content_authority">co.addoil.sunshine</string>
 </resources>
