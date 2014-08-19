@@ -60,6 +60,7 @@ public class TestDb extends AndroidTestCase {
             assertFalse(idx == -1);
             String expectedValue = entry.getValue().toString();
             assertEquals(expectedValue, valueCursor.getString(idx));
+            Log.d(LOG_TAG, "cursor's humidity: " + valueCursor.getString(valueCursor.getColumnIndex("humidity")));
         }
         valueCursor.close();
     }

@@ -1,6 +1,9 @@
 package co.addoil.sunshine;
 
 import android.annotation.TargetApi;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -27,11 +30,14 @@ import java.util.Date;
 import co.addoil.sunshine.data.WeatherContract;
 import co.addoil.sunshine.data.WeatherContract.LocationEntry;
 import co.addoil.sunshine.data.WeatherContract.WeatherEntry;
+import co.addoil.sunshine.service.SunShineService;
 
 /**
  * A placeholder fragment containing a simple view.
  */
 public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+
+    public static final int POLL_INTERVAL = 1000 * 5;
 
     public static final String TAG = ForecastFragment.class.getSimpleName();
     // These indices are tied to FORECAST_COLUMNS. If FORECAST_COLUMNS changes, these
@@ -162,7 +168,13 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
 
     private void updateWeather() {
         String location = Utility.getPreferredLocation(getActivity());
-        new FetchWeatherTask(getActivity()).execute(location);
+        Intent intent = new Intent(getActivity(), SunShineService.AlarmReceiver.class);
+        intent.putExtra(SunShineService.LOCATION_QUERY_EXTRA, location);
+        PendingIntent pi = PendingIntent.getBroadcast(getActivity(), 0, intent, PendingIntent.FLAG_ONE_SHOT);
+        AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(Context.ALARM_SERVICE);
+        alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + POLL_INTERVAL, pi);
+//        getActivity().startService(intent);
+//        new FetchWeatherTask(getActivity()).execute(location);
 
     }
 
