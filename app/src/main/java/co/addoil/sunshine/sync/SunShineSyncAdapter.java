@@ -2,12 +2,16 @@ package co.addoil.sunshine.sync;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.annotation.TargetApi;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SyncRequest;
 import android.content.SyncResult;
@@ -17,6 +21,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -25,9 +31,11 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Vector;
 
+import co.addoil.sunshine.MainActivity;
 import co.addoil.sunshine.R;
 import co.addoil.sunshine.UrlFetcher;
 import co.addoil.sunshine.Utility;
@@ -42,6 +50,8 @@ public class SunShineSyncAdapter extends AbstractThreadedSyncAdapter {
     // 1000 milliseconds (1 second) * 60 seconds (1 minute) * 180 = 3 hours
     public static final int SYNC_INTERVAL = 60 * 180;
     public static final int SYNC_FLEXTIME = SYNC_INTERVAL / 3;
+    private static final long DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
+    private static final int WEATHER_NOTIFICATION_ID = 3004;
     public final String LOG_TAG = SunShineSyncAdapter.class.getSimpleName();
     private final boolean DEBUG = true;
     private final Context mContext;
@@ -188,6 +198,71 @@ public class SunShineSyncAdapter extends AbstractThreadedSyncAdapter {
         }
     }
 
+    private void notifyWeather(double high, double low, String description, int weatherId) {
+        Context context = getContext();
+        //checking the last update and notify if it' the first of the day
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String displayNotificationsKey = context.getString(R.string.pref_enable_notifications_key);
+
+        // If notifications are enabled in preferences...
+        boolean defaultForNotifications =
+                Boolean.parseBoolean(context.getString(R.string.pref_enable_notifications_default));
+        boolean notificationsEnabled =
+                prefs.getBoolean(displayNotificationsKey, defaultForNotifications);
+
+        // AND it's been at least 24h since the last notification was displayed
+        String lastNotificationKey = context.getString(R.string.pref_last_notification);
+        long lastNotification = prefs.getLong(lastNotificationKey, 0);
+        boolean timeToNotify = (System.currentTimeMillis() - lastNotification >= DAY_IN_MILLIS);
+
+        if (notificationsEnabled && timeToNotify) {
+            // Last sync was more than 1 day ago, let's send a notification with the weather.
+            int iconId = Utility.getIconResourceForWeatherCondition(weatherId);
+            String title = mContext.getString(R.string.app_name);
+            boolean isMetric = Utility.isMetric(mContext);
+
+            // Define the text of the forecast.
+            String contentText = String.format(mContext.getString(R.string.format_notification),
+                    description,
+                    Utility.formatTemperature(mContext, high, isMetric),
+                    Utility.formatTemperature(mContext, low, isMetric));
+
+            // NotificationCompatBuilder is a very convenient way to build backward-compatible
+            // notifications. Just throw in some data.
+            NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(mContext)
+                            .setSmallIcon(iconId)
+                            .setContentTitle(title)
+                            .setContentText(contentText)
+                            .setAutoCancel(true);
+
+            // Make something interesting happen when the user clicks on the notification.
+            // In this case, opening the app is sufficient.
+            Intent resultIntent = new Intent(mContext, MainActivity.class);
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(mContext);
+            stackBuilder.addParentStack(MainActivity.class);
+            stackBuilder.addNextIntent(resultIntent);
+            PendingIntent resultPendingIntent =
+                    stackBuilder.getPendingIntent(
+                            0,
+                            PendingIntent.FLAG_UPDATE_CURRENT
+                    );
+            mBuilder.setContentIntent(resultPendingIntent);
+
+            NotificationManager mNotificationManager =
+                    (NotificationManager) getContext()
+                            .getSystemService(Context.NOTIFICATION_SERVICE);
+            // mId allows you to update the notification later on.
+            mNotificationManager.notify(WEATHER_NOTIFICATION_ID, mBuilder.build());
+
+            //refreshing last sync
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putLong(lastNotificationKey, System.currentTimeMillis());
+            editor.commit();
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public String[] getWeatherDataFromJson(String forecastJsonStr, int numDays, String locationSetting)
             throws JSONException {
 
@@ -282,13 +357,15 @@ public class SunShineSyncAdapter extends AbstractThreadedSyncAdapter {
                 weatherValues.put(WeatherContract.WeatherEntry.COLUMN_PRESSURE, pressure);
                 weatherValues.put(WeatherContract.WeatherEntry.COLUMN_WIND_SPEED, windSpeed);
                 weatherValues.put(WeatherContract.WeatherEntry.COLUMN_DEGREES, windDirection);
-                weatherValues.put(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID, weatherId);
 
                 cVVector.add(weatherValues);
 
 
                 highAndLow = formatHighLows(high, low);
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
+
+                if (i == 0)
+                    notifyWeather(high, low, description, weatherId);
             }
 
             if (cVVector.size() > 0) {
@@ -299,6 +376,12 @@ public class SunShineSyncAdapter extends AbstractThreadedSyncAdapter {
                         .bulkInsert(WeatherContract.WeatherEntry.CONTENT_URI, cvArray);
                 Log.v(LOG_TAG, "inserted " + rowsInserted + " rows of weather data");
 
+                Calendar cal = Calendar.getInstance();
+                cal.add(Calendar.DATE, -1);
+                String yesterdayDate = WeatherContract.getDbDateString(cal.getTime());
+                getContext().getContentResolver().delete(WeatherContract.WeatherEntry.CONTENT_URI,
+                        WeatherContract.WeatherEntry.COLUMN_DATETEXT + " <= ?",
+                        new String[]{yesterdayDate});
                 // Use a DEBUG variable to gate whether or not you do this, so you can easily
                 // turn it on and off, and so that it's easy to see what you can rip out if
                 // you ever want to remove it.

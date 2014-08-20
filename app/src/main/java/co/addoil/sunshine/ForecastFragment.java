@@ -96,9 +96,9 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     public boolean onOptionsItemSelected(MenuItem item) {
 
         switch (item.getItemId()) {
-            case R.id.action_refresh:
-                updateWeather();
-                break;
+//            case R.id.action_refresh:
+//                updateWeather();
+//                break;
             case R.id.action_settings:
                 Intent i = new Intent(getActivity(), SettingsActivity.class);
                 startActivity(i);

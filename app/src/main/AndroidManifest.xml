@@ -41,8 +41,6 @@
                 android:value="co.addoil.sunshine.MainActivity"/>
         </activity>
 
-        <service android:name=".service.SunShineService"></service>
-
         <provider
             android:name=".data.WeatherProvider"
             android:authorities="@string/content_authority"
